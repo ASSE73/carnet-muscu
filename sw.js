@@ -1,5 +1,5 @@
 // Carnet Muscu — fonctionne hors ligne à la salle. Changer VERSION à chaque mise à jour.
-const VERSION = "carnet-muscu-v1";
+const VERSION = "carnet-muscu-v2";
 const CORE = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./apple-touch-icon.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(VERSION).then(c => c.addAll(CORE))); self.skipWaiting(); });
 self.addEventListener("activate", e => {
