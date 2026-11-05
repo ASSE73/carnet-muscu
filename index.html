@@ -166,6 +166,7 @@ td.num{font-family:var(--mono);white-space:nowrap}
 
 <script>
 /* ===================== PROGRAMME ===================== */
+const APP_VERSION = "3 · 5 nov. 2026";
 const START = "2026-11-05";           // début du cycle
 const UTMB = "2027-08-27";            // départ UTMB (vendredi fin août, date indicative)
 const PHASES = {
@@ -519,6 +520,7 @@ function renderProg(){
       <p class="note"><strong>Pour passer à la suite :</strong> ${PHASES[n].gate}</p>
       ${n===3?`<label class="toggle"><input type="checkbox" id="plyo" ${S.cfg.plyoOk?"checked":""}> Feu vert médecin et Rémi pour la pliométrie (débloque la séance C)</label>`:""}
     </div>`).join("")}
+    <p class="note">Version ${APP_VERSION}</p>
   </section>`;
 }
 function backupBlock(){
@@ -646,7 +648,13 @@ function afterLoad(){
 }
 render();
 try{ navigator.storage?.persist?.(); }catch(e){}
-if("serviceWorker" in navigator){ addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{})); }
+if("serviceWorker" in navigator){
+  let reloaded=false;
+  navigator.serviceWorker.addEventListener("controllerchange",()=>{ if(reloaded||S.draft) return; reloaded=true; location.reload(); });
+  addEventListener("load",()=>navigator.serviceWorker.register("sw.js").then(reg=>{
+    document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible") reg.update().catch(()=>{}); });
+  }).catch(()=>{}));
+}
 (async()=>{
   let db=null;
   try{ db = await window.claude?.use?.("db"); }catch(e){}
