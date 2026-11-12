@@ -1,5 +1,5 @@
 // Carnet Muscu — fonctionne hors ligne à la salle. Changer VERSION à chaque mise à jour.
-const VERSION = "carnet-muscu-v5";
+const VERSION = "carnet-muscu-v6";
 const CORE = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./apple-touch-icon.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(VERSION).then(c => c.addAll(CORE))); self.skipWaiting(); });
 self.addEventListener("activate", e => {
@@ -10,7 +10,7 @@ self.addEventListener("fetch", e => {
   const url = new URL(req.url);
   // Page et fichiers de l'app : réseau d'abord (pour recevoir les mises à jour), cache si pas de réseau
   if (url.origin === location.origin) {
-    e.respondWith(fetch(req).then(r => { const c = r.clone(); caches.open(VERSION).then(x => x.put(req, c)); return r; })
+    e.respondWith(fetch(new Request(req.url, {cache: "no-cache", credentials: "same-origin"})).then(r => { const c = r.clone(); caches.open(VERSION).then(x => x.put(req, c)); return r; })
       .catch(() => caches.match(req).then(r => r || caches.match("./index.html"))));
     return;
   }

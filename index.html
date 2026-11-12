@@ -21,6 +21,8 @@
 body{margin:0;-webkit-text-size-adjust:100%}
 img,svg{max-width:100%}
 [hidden]{display:none!important}
+.upd{position:fixed;left:0;right:0;top:0;z-index:50;border:0;cursor:pointer;background:#2a46d8;color:#fff;font:600 14px system-ui,sans-serif;
+  padding:calc(12px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 12px max(16px,env(safe-area-inset-left,0px))}
 /* Layout: carnet d'entraînement mobile-first, une colonne, blanc dominant, noir pour le texte, couleur réservée à l'action en cours et aux alertes */
 :root{
   --bg:#ffffff; --fg:#0c0d10; --muted:#6b6e78; --line:#e6e7ec; --soft:#f4f5f8;
@@ -173,7 +175,7 @@ td.num{font-family:var(--mono);white-space:nowrap}
 
 <script>
 /* ===================== PROGRAMME ===================== */
-const APP_VERSION = "5 · 12 nov. 2026";
+const APP_VERSION = "6 · 12 nov. 2026";
 const START = "2026-11-05";           // début du cycle
 const UTMB = "2027-08-27";            // départ UTMB (vendredi fin août, date indicative)
 const PHASES = {
@@ -711,7 +713,9 @@ render();
 try{ navigator.storage?.persist?.(); }catch(e){}
 if("serviceWorker" in navigator){
   let reloaded=false;
-  navigator.serviceWorker.addEventListener("controllerchange",()=>{ if(reloaded||S.draft) return; reloaded=true; location.reload(); });
+  const showUpdate=()=>{ if(document.getElementById("upd")) return; const b=document.createElement("button"); b.id="upd"; b.className="upd";
+    b.textContent="Nouvelle version disponible · Toucher pour mettre à jour (ta séance est gardée)"; b.onclick=()=>location.reload(); document.body.appendChild(b); };
+  navigator.serviceWorker.addEventListener("controllerchange",()=>{ if(reloaded) return; if(S.draft){ showUpdate(); return; } reloaded=true; location.reload(); });
   addEventListener("load",()=>navigator.serviceWorker.register("sw.js").then(reg=>{
     document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible") reg.update().catch(()=>{}); });
   }).catch(()=>{}));
