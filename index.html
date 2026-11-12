@@ -85,9 +85,16 @@ section{padding-block:20px;display:flex;flex-direction:column;gap:16px}
 .vid{color:var(--accent);font:600 13px var(--body);text-decoration:none;margin-top:4px}
 .vid:hover{text-decoration:underline}
 .trow{display:flex;gap:8px;align-items:center}
+.sk .rl{stroke:var(--muted);stroke-width:2;stroke-dasharray:3 3}
+.vsw{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.vsw button{border:1.5px solid var(--line);background:var(--bg);color:var(--fg);border-radius:999px;padding:6px 12px;font:600 13px var(--body);cursor:pointer}
+.vsw button[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.alt{color:var(--muted);font-size:12px}
 .trow .vid{color:var(--fg);font:400 14px var(--body);margin:0}
 .target{font:700 15px var(--mono);white-space:nowrap}
 .target span{display:block;text-align:right}
+.ex-head h3{min-width:0;flex:1;overflow-wrap:anywhere}
+.target{flex:none}
 .cue{font-size:14px;color:var(--muted);margin:2px 0 0}
 .last{font-size:13px;color:var(--muted);font-family:var(--mono)}
 .last b{color:var(--ok);font-family:var(--body)}
@@ -166,7 +173,7 @@ td.num{font-family:var(--mono);white-space:nowrap}
 
 <script>
 /* ===================== PROGRAMME ===================== */
-const APP_VERSION = "4 · 5 nov. 2026";
+const APP_VERSION = "5 · 12 nov. 2026";
 const START = "2026-11-05";           // début du cycle
 const UTMB = "2027-08-27";            // départ UTMB (vendredi fin août, date indicative)
 const PHASES = {
@@ -236,9 +243,32 @@ const P = {
   }
 };
 
+/* ===================== VARIANTES MACHINE ===================== */
+// Chaque variante a son propre suivi de charges (id distinct).
+const VARIANTS = {
+  squat:{base:"Barre libre", alts:[{id:"squat_guide",l:"Barre guidée",n:"Squat barre guidée",k:"30",pose:"squat",rail:true,c:"Charge ajoutée sur la barre guidée, pieds légèrement en avant. Attention : la colonne et le sacrum sont chargés autant qu'en barre libre"}]},
+  pont_charge:{base:"Barre / haltère", alts:[{id:"pont_guide",l:"Barre guidée",n:"Pont fessier barre guidée",k:"30",pose:"pont_charge",rail:true,c:"Barre guidée sur le pli des hanches (avec mousse). Pause 1 s en haut, côtes basses, sans cambrer"}]},
+  hip_thrust:{base:"Barre libre", alts:[{id:"hip_thrust_guide",l:"Barre guidée",n:"Hip thrust barre guidée",k:"40",pose:"hip_thrust",rail:true,c:"Banc derrière les épaules, barre guidée sur les hanches. Trajectoire stable : concentre-toi sur les fessiers, sans cambrer"}]},
+  bulgare:{base:"Haltères", alts:[{id:"bulgare_guide",l:"Barre guidée",n:"Squat bulgare barre guidée",k:"20",pose:"bulgare",rail:true,c:"Charge ajoutée sur la barre guidée. Pas d'équilibre à gérer : bassin horizontal, descente en 2-3 s"}]},
+  sdt:{base:"Barre libre", alts:[{id:"leg_curl",l:"Machine",n:"Leg curl machine",s:3,r:"10-12",u:"",k:"20",rest:75,c:"Ischios sans charge sur la colonne. Hanches plaquées, montée 1 s, descente 2-3 s"}]},
+  sdt_uni:{base:"Haltère", alts:[{id:"leg_curl",l:"Machine",n:"Leg curl machine",s:3,r:"10-12",u:"",k:"20",rest:75,c:"Ischios sans charge sur la colonne. Hanches plaquées, montée 1 s, descente 2-3 s"}]},
+  moyen_fessier:{base:"Élastique", alts:[{id:"abduction_poulie",l:"Poulie",n:"Abduction de hanche à la poulie",t:"load",r:"12",u:"/côté",k:"5",rest:45,c:"Poulie basse, sangle à la cheville, debout de profil. Jambe tendue vers l'extérieur sans pencher le buste"}]},
+  mollet_debout:{base:"Haltère", alts:[{id:"mollet_assis_guide",l:"Assis guidé",n:"Mollets assis à la barre guidée",k:"20",rail:true,c:"Assis sous la barre guidée, barre sur le bas des cuisses (avec mousse), avant des pieds sur un disque. Aucune charge sur le dos"}]}
+};
+const vById = {}; Object.values(VARIANTS).forEach(v=>v.alts.forEach(a=>vById[a.id]=a));
+function effEx(base, sel){ const a = sel && (VARIANTS[base.id]?.alts||[]).find(x=>x.id===sel); return a ? {...base, ...a, base:base.id} : base; }
+function findEx(phase,key,id){
+  for(const e of (P[phase]||{})[key]||[]){ if(e.id===id) return e; if((VARIANTS[e.id]?.alts||[]).some(a=>a.id===id)) return effEx(e,id); }
+  return null;
+}
+function altHint(id){ const v=VARIANTS[id]; return v?` <span class="alt">· ou ${v.alts.map(a=>esc(a.l.toLowerCase())).join(", ")}</span>`:""; }
+
 /* ===================== CROQUIS + VIDÉOS ===================== */
 // l: membres (polylignes) · h: tête · w: charges (cercles) · b: support (box) · a: élastique/câble · ar: flèches
 const POSES = {
+  leg_curl:{h:[14,43],b:[[8,50,86,7]],l:[[[20,47],[70,47],[90,47],[97,28]],[[22,47],[24,57]]],w:[[97,26,4]],ar:[[108,44,108,28]]},
+  abduction_poulie:{h:[56,8],b:[[10,10,6,64]],l:[[[56,16],[56,42],[54,72]],[[56,42],[80,66]],[[56,22],[44,32]]],a:[[[80,66],[16,70]]],ar:[[88,60,104,54]]},
+  mollet_assis_guide:{h:[40,10],b:[[22,46,26,28],[64,68,18,6]],l:[[[40,18],[40,44],[68,44],[70,66],[80,67]],[[40,24],[58,38]]],w:[[64,39,5]],ar:[[96,66,96,52]]},
   planche:{h:[98,45],l:[[[18,72],[55,54],[88,50]],[[88,50],[86,72],[102,72]]]},
   pont_charge:{h:[16,66],l:[[[26,70],[58,50],[80,48],[86,72]],[[26,70],[48,72]]],w:[[58,43,6]],ar:[[58,62,58,52]]},
   hip_thrust:{h:[22,50],b:[[6,56,28,18]],l:[[[32,57],[62,52],[84,50],[88,72]],[[32,57],[48,62]]],w:[[62,45,7]]},
@@ -268,6 +298,9 @@ const POSES = {
 const VID = {
   planche:"gainage planche coudes technique", pont_charge:"pont fessier lesté haltère technique", hip_thrust:"hip thrust barre technique",
   squat_gobelet:"goblet squat technique", squat:"back squat technique coureur", fente_statique:"fente statique haltères technique", squat_step:"step down profond haltères squat unipodal box",
+  squat_guide:"squat smith machine technique", pont_guide:"pont fessier smith machine", hip_thrust_guide:"hip thrust smith machine technique",
+  bulgare_guide:"squat bulgare smith machine", leg_curl:"leg curl allongé machine technique", abduction_poulie:"abduction hanche poulie basse debout",
+  mollet_assis_guide:"mollets assis smith machine",
   fente_marchee:"fentes marchées haltères technique", mollet_debout:"mollets debout sur marche technique", mollet_exc:"mollets excentriques tendon achille protocole",
   proprio:"proprioception cheville unipodal exercice", dead_bug:"dead bug exercice gainage", step_up:"step up haltères technique",
   step_down:"step down excentrique genou exercice", bulgare:"squat bulgare technique", moyen_fessier:"marche latérale élastique moyen fessier",
@@ -277,13 +310,15 @@ const VID = {
 };
 const vidUrl = id => "https://www.youtube.com/results?search_query="+encodeURIComponent(VID[id]||id);
 function sketch(id, cls="sk"){
-  const p = POSES[id]; if(!p) return "";
+  const va = vById[id]; const p = POSES[id] || (va && POSES[va.pose]); if(!p) return "";
+  const rail = !!va?.rail;
   const pl = pts => pts.map(x=>x.join(",")).join(" ");
   const arrows = (p.ar||[]).map(([x1,y1,x2,y2])=>{
     const a=Math.atan2(y2-y1,x2-x1), s=5, l=[x2-s*Math.cos(a-.5),y2-s*Math.sin(a-.5)], r=[x2-s*Math.cos(a+.5),y2-s*Math.sin(a+.5)];
     return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/><polyline points="${l.join(",")} ${x2},${y2} ${r.join(",")}"/>`;}).join("");
   return `<svg class="${cls}" viewBox="0 0 120 80" role="img" aria-label="Croquis du mouvement">
     <line x1="2" y1="74" x2="118" y2="74" class="gr"/>
+    ${rail?'<line x1="6" y1="2" x2="6" y2="74" class="rl"/><line x1="114" y1="2" x2="114" y2="74" class="rl"/>':""}
     ${(p.b||[]).map(([x,y,w,h])=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="2" class="bx"/>`).join("")}
     <g class="bd">${p.l.map(l=>`<polyline points="${pl(l)}"/>`).join("")}<circle cx="${p.h[0]}" cy="${p.h[1]}" r="5.5"/></g>
     ${(p.a||[]).map(l=>`<polyline points="${pl(l)}" class="ac"/>`).join("")}
@@ -349,16 +384,17 @@ function canProgress(ex, last){
   const pain = (last.s.painDuring||0)>0 || (last.s.painMorning||0)>0;
   return allTop && !pain;
 }
+function initSets(e){
+  const last = lastFor(e.id);
+  return {sets: Array.from({length:e.s},(_,i)=>{
+    const ref = last?.sets[Math.min(i,last.sets.length-1)];
+    return {kg: ref?.kg ?? (e.k||""), r: ref?.r??"", done:false};
+  })};
+}
 function startSession(key){
   const phase = S.cfg.phase, list = P[phase][key];
   const ex = {};
-  list.forEach(e=>{
-    const last = lastFor(e.id);
-    ex[e.id] = {sets: Array.from({length:e.s},(_,i)=>{
-      const ref = last?.sets[Math.min(i,last.sets.length-1)];
-      return {kg: ref?.kg ?? (e.k||""), r: ref?.r??"", done:false};
-    })};
-  });
+  list.forEach(e=>{ ex[e.id] = initSets(e); });
   S.draft = {_id: today()+"_"+key+"_"+Math.random().toString(36).slice(2,7), date:today(), key, phase, week:weekNo(),
     startedAt:new Date().toISOString(), finished:false, ex, rpe:null, painDuring:0, painMorning:null, notes:""};
   persist(S.draft); wake(); render(); window.scrollTo(0,0);
@@ -421,7 +457,7 @@ function renderSeance(){
       <div class="seg" role="group" aria-label="Choix de séance">${keys.map(k=>`<button data-key="${k}" aria-pressed="${k===S.pickKey}" ${k==="C"&&!S.cfg.plyoOk?"disabled title='Feu vert requis'":""}>Séance ${k}</button>`).join("")}</div>
       ${ph===3&&!S.cfg.plyoOk?`<p class="note">Séance C (pliométrie) verrouillée tant que le feu vert n'est pas coché dans Programme.</p>`:""}
       <table><thead><tr><th>Exercice</th><th>Cible</th><th>Dernière fois / départ</th></tr></thead><tbody>
-      ${list.map(e=>{const l=lastFor(e.id); return `<tr><td><div class="trow">${sketch(e.id,"sk mini")}<a class="vid" href="${vidUrl(e.id)}" target="_blank" rel="noopener">${esc(e.n)} ↗</a></div></td><td class="num">${e.s}×${e.r}${e.u&&e.u!=="m"?"":""}</td><td class="num">${l?l.sets.map(x=>(x.kg?x.kg+"kg×":"")+x.r).join(" "):(e.k?"départ "+e.k+" kg":"—")}</td></tr>`}).join("")}
+      ${list.map(e=>{const l=lastFor(e.id); return `<tr><td><div class="trow">${sketch(e.id,"sk mini")}<div><a class="vid" href="${vidUrl(e.id)}" target="_blank" rel="noopener">${esc(e.n)} ↗</a>${altHint(e.id)}</div></div></td><td class="num">${e.s}×${e.r}${e.u&&e.u!=="m"?"":""}</td><td class="num">${l?l.sets.map(x=>(x.kg?x.kg+"kg×":"")+x.r).join(" "):(e.k?"départ "+e.k+" kg":"—")}</td></tr>`}).join("")}
       </tbody></table>
       <button class="primary" id="go">Démarrer la séance ${S.pickKey}</button>
       <p class="note">Règle de la douleur : rien pendant, rien dans les 24 h, rien au réveil. Sinon on recule d'un cran.</p>
@@ -429,18 +465,25 @@ function renderSeance(){
   }
   const d = S.draft, list = P[d.phase][d.key];
   const free = d.free||[];
-  const ids = list.map(e=>e.id).concat(free.map(f=>f.id));
+  const ids = Object.keys(d.ex);
   const total = ids.reduce((a,id)=>a+d.ex[id].sets.length,0), done = ids.reduce((a,id)=>a+d.ex[id].sets.filter(x=>x.done).length,0);
   return `<section>
     <div class="status"><span class="chip phase">Séance ${esc(d.key)} · Phase ${d.phase}</span><span class="chip">${done}/${total} séries</span><span class="savestate" id="savestate">${esc(S.saving)}</span></div>
-    ${list.map(e=>{
+    ${list.map(base=>{
+      const e = effEx(base, d.sel?.[base.id]);
+      if(!d.ex[e.id]) d.ex[e.id] = initSets(e);
       const st = d.ex[e.id], last = lastFor(e.id), prog = canProgress(e,last);
+      const vs = VARIANTS[base.id];
+      const sw = vs ? `<div class="vsw" role="group" aria-label="Version de l'exercice">${[{id:"",l:vs.base}].concat(vs.alts).map(a=>`<button data-var="${a.id}" data-base="${base.id}" aria-pressed="${(d.sel?.[base.id]||"")===a.id}">${esc(a.l)}</button>`).join("")}</div>` : "";
+      const others = vs ? [base.id, ...vs.alts.map(a=>a.id)].filter(x=>x!==e.id && d.ex[x]?.sets.some(z=>z.done)) : [];
       return `<div class="ex" data-ex="${e.id}">
         <div class="ex-top">${sketch(e.id)}<div class="ex-info">
           <div class="ex-head"><h3>${esc(e.n)}</h3><div class="target">${e.s}×${esc(e.r)}${e.u?`<span style="font-weight:500;font-size:12px"> ${esc(e.u)}</span>`:""}</div></div>
           <p class="cue">${esc(e.c)}</p>
           <a class="vid" href="${vidUrl(e.id)}" target="_blank" rel="noopener">Voir en vidéo ↗</a>
+          ${sw}
         </div></div>
+        ${others.map(x=>`<div class="last">Déjà fait aujourd'hui en ${esc(x===base.id?vs.base.toLowerCase():vById[x].l.toLowerCase())} : ${d.ex[x].sets.filter(z=>z.done).map(z=>(z.kg?z.kg+"kg×":"")+z.r).join(" · ")}</div>`).join("")}
         ${last?`<div class="last">Dernière fois ${fmtDate(last.s.date)} : ${last.sets.map(x=>(x.kg?x.kg+"kg×":"")+x.r).join(" · ")} ${prog?`<b>· monte la charge</b>`:""}</div>`:""}
         <div class="sets">${st.sets.map((x,i)=>`
           <div class="set ${x.done?"done":""}" data-i="${i}">
@@ -476,6 +519,13 @@ function renderSeance(){
     </div>
   </section>`;
 }
+function histItems(s){
+  const list=(P[s.phase]||{})[s.key]||[], nm={}, order=[];
+  list.forEach(e=>{ order.push(e.id); nm[e.id]=e.n; (VARIANTS[e.id]?.alts||[]).forEach(a=>{ order.push(a.id); nm[a.id]=a.n; }); });
+  (s.free||[]).forEach(f=>{ order.push(f.id); nm[f.id]=(f.name||"Exercice libre")+" (libre)"; });
+  return [...new Set(order)].map(id=>{ const st=s.ex?.[id]; if(!st) return ""; const dn=st.sets.filter(x=>x.done);
+    return dn.length?`<li>${esc(nm[id])} : ${dn.map(x=>(x.kg?x.kg+"kg×":"")+x.r).join(" · ")}</li>`:""; }).join("");
+}
 function renderHist(){
   const f = finished();
   if(!f.length) return `<section><h2>Historique</h2><p class="note">Tes séances terminées apparaîtront ici, avec les charges, le RPE et la douleur pendant et au réveil.</p></section>`;
@@ -484,7 +534,7 @@ function renderHist(){
   [...f].reverse().forEach(s=>{ Object.entries(s.ex||{}).forEach(([id,e])=>{ if(id.startsWith("libre_")) return; e.sets.filter(x=>x.done&&x.kg!=="").forEach(x=>{
     const kg=parseFloat(String(x.kg).replace(",",".")); if(isNaN(kg)) return;
     best[id]=best[id]||{first:kg,max:kg,last:kg}; best[id].max=Math.max(best[id].max,kg); best[id].last=kg; }); }); });
-  const names={}; Object.values(P).forEach(ph=>Object.values(ph).forEach(l=>l.forEach(e=>names[e.id]=names[e.id]||e.n)));
+  const names={}; Object.values(P).forEach(ph=>Object.values(ph).forEach(l=>l.forEach(e=>names[e.id]=names[e.id]||e.n))); Object.values(vById).forEach(a=>names[a.id]=a.n);
   const dotc = p => p==null?"var(--line)":p===0?"var(--ok)":p<=3?"var(--warn)":"var(--bad)";
   return `<section>
     <h2>Progression des charges</h2>
@@ -496,7 +546,7 @@ function renderHist(){
       const list = (P[s.phase]||{})[s.key]||[];
       return `<div class="hrow"><div class="top"><h3>${fmtDate(s.date)} · Séance ${esc(s.key)}</h3><span class="meta">Ph ${s.phase} · S${s.week}</span></div>
       <div class="meta">RPE ${s.rpe??"—"} · <span class="dot" style="background:${dotc(s.painDuring)}"></span>pendant ${s.painDuring??"—"} · <span class="dot" style="background:${dotc(s.painMorning)}"></span>réveil ${s.painMorning??"à noter"}</div>
-      <ul>${list.map(e=>{const st=s.ex?.[e.id]; if(!st) return ""; const dn=st.sets.filter(x=>x.done); return dn.length?`<li>${esc(e.n)} : ${dn.map(x=>(x.kg?x.kg+"kg×":"")+x.r).join(" · ")}</li>`:"";}).join("")}${(s.free||[]).map(f=>{const st=s.ex?.[f.id]; if(!st) return ""; const dn=st.sets.filter(x=>x.done); return dn.length?`<li>${esc(f.name||"Exercice libre")} <span class="note">(libre)</span> : ${dn.map(x=>(x.kg?x.kg+"kg×":"")+x.r).join(" · ")}</li>`:"";}).join("")}</ul>
+      <ul>${histItems(s)}</ul>
       ${s.notes?`<p class="note">${esc(s.notes)}</p>`:""}</div>`;}).join("")}</div>
   </section>`;
 }
@@ -516,7 +566,7 @@ function renderProg(){
       <div class="ex-head"><div><div class="eyebrow">Phase ${n} · ${PHASES[n].weeks}</div><h3>${PHASES[n].name}</h3></div>
       ${n===ph?`<span class="chip phase">En cours</span>`:`<button class="ghost small" data-setphase="${n}">Passer en phase ${n}</button>`}</div>
       <p class="note">${PHASES[n].goal}</p>
-      ${Object.entries(P[n]).map(([k,l])=>`<div><strong>Séance ${k}</strong><div class="prog-table"><table><tbody>${l.map(e=>`<tr><td><div class="trow">${sketch(e.id,"sk mini")}<a class="vid" href="${vidUrl(e.id)}" target="_blank" rel="noopener">${esc(e.n)} ↗</a></div></td><td class="num">${e.s}×${esc(e.r)} ${e.u?esc(e.u):e.t==="time"?"s":""}</td></tr>`).join("")}</tbody></table></div></div>`).join("")}
+      ${Object.entries(P[n]).map(([k,l])=>`<div><strong>Séance ${k}</strong><div class="prog-table"><table><tbody>${l.map(e=>`<tr><td><div class="trow">${sketch(e.id,"sk mini")}<div><a class="vid" href="${vidUrl(e.id)}" target="_blank" rel="noopener">${esc(e.n)} ↗</a>${altHint(e.id)}</div></div></td><td class="num">${e.s}×${esc(e.r)} ${e.u?esc(e.u):e.t==="time"?"s":""}</td></tr>`).join("")}</tbody></table></div></div>`).join("")}
       <p class="note"><strong>Pour passer à la suite :</strong> ${PHASES[n].gate}</p>
       ${n===3?`<label class="toggle"><input type="checkbox" id="plyo" ${S.cfg.plyoOk?"checked":""}> Feu vert médecin et Rémi pour la pliométrie (débloque la séance C)</label>`:""}
     </div>`).join("")}
@@ -587,7 +637,7 @@ view.addEventListener("click",e=>{
   const chk=t.closest("[data-check]");
   if(chk && S.draft){
     const exId=t.closest("[data-ex]").dataset.ex, i=+t.closest("[data-i]").dataset.i, set=S.draft.ex[exId].sets[i];
-    const ex=P[S.draft.phase][S.draft.key].find(x=>x.id===exId) || {r:"10", rest:90};
+    const ex=findEx(S.draft.phase,S.draft.key,exId) || {r:"10", rest:90};
     if(!set.done && set.r===""){ set.r=String(ex.r).split("-")[0]; }
     set.done=!set.done;
     // reporte la charge sur la série suivante vide
@@ -596,6 +646,17 @@ view.addEventListener("click",e=>{
     const y=window.scrollY; render(); window.scrollTo(0,y);
     if(set.done) startTimer(ex.rest);
     return;
+  }
+  const vb=t.closest("[data-var]");
+  if(vb && S.draft){
+    const d=S.draft, b=vb.dataset.base, nv=vb.dataset.var||"";
+    const base=P[d.phase][d.key].find(x=>x.id===b); if(!base) return;
+    d.sel=d.sel||{}; if((d.sel[b]||"")===nv) return;
+    const cur=effEx(base,d.sel[b]);
+    if(d.ex[cur.id] && !d.ex[cur.id].sets.some(x=>x.done)) delete d.ex[cur.id];
+    if(nv) d.sel[b]=nv; else delete d.sel[b];
+    const ne=effEx(base,nv||undefined); if(!d.ex[ne.id]) d.ex[ne.id]=initSets(ne);
+    persist(d); const y=window.scrollY; render(); window.scrollTo(0,y); return;
   }
   if(t.id==="addFree" && S.draft){
     S.draft.free=S.draft.free||[]; const id="libre_"+Date.now().toString(36);
